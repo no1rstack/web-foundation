@@ -1,0 +1,70 @@
+{
+  "name": "@no1rstack/web-foundation",
+  "version": "0.1.0",
+  "description": "Shared web foundation platform — SEO, security, analytics, observability, middleware for all no1rstack apps",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./express": {
+      "types": "./dist/adapters/express/index.d.ts",
+      "import": "./dist/adapters/express/index.js"
+    },
+    "./middleware": {
+      "types": "./dist/middleware/index.d.ts",
+      "import": "./dist/middleware/index.js"
+    },
+    "./seo": {
+      "types": "./dist/seo/index.d.ts",
+      "import": "./dist/seo/index.js"
+    },
+    "./quality": {
+      "types": "./dist/quality/index.d.ts",
+      "import": "./dist/quality/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "tsc --noEmit",
+    "test": "node --import tsx --test tests/**/*.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "seo",
+    "security",
+    "middleware",
+    "web-foundation",
+    "sitemap",
+    "structured-data",
+    "open-graph",
+    "robots",
+    "canonical"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "express": "^4.17.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node": "^22.20.0",
+    "tsx": "^4.23.0",
+    "typescript": "~5.8.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
