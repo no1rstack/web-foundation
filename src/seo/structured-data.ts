@@ -343,7 +343,7 @@ export function buildDocumentationSchema(input: DocumentationSchemaInput): Struc
 export function renderJsonLd(data: StructuredDataPayload | StructuredDataPayload[]): string {
   const payloads = Array.isArray(data) ? data : [data];
   return payloads
-    .map((p) => `<script type="application/ld+json">${JSON.stringify(p)}</script>`)
+    .map((p) => `<script type="application/ld+json">${JSON.stringify(p).replace(/</g, '\\u003c')}</script>`)
     .join('\n');
 }
 
