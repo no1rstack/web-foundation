@@ -238,6 +238,11 @@ export interface StructuredDataPayload {
   [key: string]: unknown;
 }
 
+export interface AlternateLanguage {
+  hrefLang: string;
+  href: string;
+}
+
 export interface OpenGraphData {
   ogTitle: string;
   ogDescription: string;
