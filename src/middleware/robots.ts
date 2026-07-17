@@ -121,13 +121,7 @@ export function generateRobotsTxt(
   lines.push('');
   lines.push(`Sitemap: ${baseUrl.replace(/\/$/, '')}/sitemap.xml`);
 
-  lines.push('');
-  lines.push('User-agent: AdsBot-Google');
-  lines.push('Allow: /');
 
-  lines.push('');
-  lines.push('User-agent: Googlebot');
-  lines.push('Allow: /');
 
   return lines.join('\n');
 }
