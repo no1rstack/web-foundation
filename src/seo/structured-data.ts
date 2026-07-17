@@ -2,6 +2,7 @@ import type { StructuredDataPayload } from '../types.js';
 
 export interface OrgSchemaInput {
   name: string;
+  schemaType?: 'Organization' | 'Corporation' | 'LocalBusiness' | 'NGO';
   url: string;
   logo?: string;
   sameAs?: string[];
@@ -11,7 +12,7 @@ export interface OrgSchemaInput {
 export function buildOrganizationSchema(input: OrgSchemaInput): StructuredDataPayload {
   const ld: StructuredDataPayload = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': input.schemaType || 'Organization',
     name: input.name,
     url: input.url,
   };
