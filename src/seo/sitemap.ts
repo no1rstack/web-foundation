@@ -61,9 +61,9 @@ export async function buildMultiSitemap(
         : source.entries;
 
     const maxEntries = seoConfig?.sitemapGroups?.find((g) => g.name === source.name)?.maxEntries;
-    const limited = maxEntries ? entries.slice(0, maxEntries) : entries;
-
-    const xml = generateSitemapXml(limited);
+    const prepared = prepareSitemapEntries(entries);
+    const limit = Math.min(maxEntries || 50_000, 50_000);
+    const xml = generateSitemapXml(prepared.slice(0, limit));
     results.set(source.name, xml);
   }
 
@@ -152,4 +152,39 @@ export function generateSitemapReport(
   }
 
   return { total, included, excluded, blockedByQuality, byGroup };
+}
+
+
+export interface SitemapEntryValidation {
+  valid: boolean;
+  issues: string[];
+}
+
+export function validateSitemapEntry(entry: SitemapEntry): SitemapEntryValidation {
+  const issues: string[] = [];
+  try {
+    const url = new URL(entry.loc);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') issues.push('loc must use http or https');
+    if (url.hash) issues.push('loc must not contain a fragment');
+  } catch {
+    issues.push('loc must be an absolute URL');
+  }
+  if (entry.priority !== undefined && (entry.priority < 0 || entry.priority > 1)) {
+    issues.push('priority must be between 0 and 1');
+  }
+  if (entry.lastmod && Number.isNaN(Date.parse(entry.lastmod))) {
+    issues.push('lastmod must be an ISO-compatible date');
+  }
+  return { valid: issues.length === 0, issues };
+}
+
+export function prepareSitemapEntries(entries: SitemapEntry[]): SitemapEntry[] {
+  return deduplicateSitemapEntries(entries)
+    .filter((entry) => validateSitemapEntry(entry).valid)
+    .map((entry) => ({
+      ...entry,
+      loc: new URL(entry.loc).toString(),
+      lastmod: entry.lastmod ? new Date(entry.lastmod).toISOString() : undefined,
+    }))
+    .sort((a, b) => a.loc.localeCompare(b.loc));
 }
