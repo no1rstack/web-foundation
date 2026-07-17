@@ -6,7 +6,7 @@ export interface PageMetadata {
   canonicalUrl?: string;
   robots?: string;
   og?: OpenGraphData;
-  structuredData?: Record<string, unknown>;
+  structuredData?: StructuredDataPayload | StructuredDataPayload[];
   breadcrumbs?: Array<{ name: string; url: string }>;
   alternates?: AlternateLanguage[];
   themeColor?: string;
@@ -126,7 +126,7 @@ export class MetadataBuilder {
       canonicalUrl: input.path ? this.buildCanonicalUrl(input.path) : undefined,
       robots: input.robots || this.buildRobotsDirective(),
       og: this.buildOpenGraph(input),
-      structuredData: input.structuredData as Record<string, unknown> | undefined,
+      structuredData: input.structuredData,
       alternates: input.alternates,
       themeColor: this.themeColor,
     };
