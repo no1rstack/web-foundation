@@ -117,6 +117,63 @@ const headHtml = renderMetadataTags(metadata);
 
 The renderer emits title, description, robots, canonical URL, theme color, Open Graph, Twitter Card, hreflang alternates, and escaped JSON-LD. Sitemap preparation validates absolute URLs, removes duplicates, normalizes modification dates, and honors the 50,000 URL protocol limit.
 
+## Crawlable Express and Vite applications
+
+Pass sitemap sources to the Express adapter. `applyAll` registers `/robots.txt`, `/sitemap.xml`, each `/sitemap-{source}.xml`, and `/health`.
+
+```ts
+const wf = createExpressMiddleware({
+  config,
+  sitemapSources: [
+    {
+      name: 'pages',
+      entries: async () => [
+        {
+          loc: 'https://example.com/platform',
+          lastmod: new Date().toISOString(),
+          changefreq: 'weekly',
+          priority: 0.9,
+        },
+      ],
+    },
+  ],
+});
+
+wf.applyAll(app);
+```
+
+Render crawlable HTML from React, Vite SSR, or another server renderer by returning body markup and metadata:
+
+```ts
+app.get('*', wf.renderPage(async (req) => {
+  const metadata = metadataBuilder.buildAll({
+    title: 'Platform',
+    description: 'A complete description for search results.',
+    path: req.path,
+  });
+
+  // React example: renderToString(<App url={req.url} />)
+  const bodyHtml = await renderApplication(req.url);
+  return {
+    metadata,
+    bodyHtml: `<div id="root">${bodyHtml}</div>`,
+    scripts: [{ src: '/assets/app.js', type: 'module' }],
+  };
+}));
+```
+
+For static generation, import `prerenderRoutes` from `@noirstack/web-foundation/rendering`. It produces complete HTML documents that can be written by the consumer's Vite or deployment build step.
+
+Register status handlers after application routes:
+
+```ts
+app.get('/retired-page', wf.gone());
+app.use(wf.notFound());
+app.use(wf.errorHandler());
+```
+
+These helpers return explicit `301`, `404`, `410`, and `500` responses. HTML error responses can receive page metadata and are marked `noindex,nofollow` for server errors.
+
 ## Development
 
 ```bash
