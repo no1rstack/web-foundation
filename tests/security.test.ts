@@ -22,7 +22,7 @@ test('security headers are applied from the resolved policy', () => {
 
 test('forwarded client IP is ignored unless proxy trust is explicit', () => {
   const headers = { 'x-forwarded-for': '203.0.113.8, 10.0.0.4' };
-  assert.equal(extractClientIp(headers, '10.0.0.2'), '10.0.0.2');
+  assert.equal(extractClientIp(headers, '10.0.0.2', false), '10.0.0.2');
   assert.equal(extractClientIp(headers, '10.0.0.2', true), '203.0.113.8');
 });
 
