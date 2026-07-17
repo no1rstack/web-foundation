@@ -3,7 +3,7 @@ import type { PageMetadata } from '../../seo/metadata.js';
 import { resolveSecurityConfig } from '../../middleware/security-headers.js';
 import { resolveRobotsConfig, generateRobotsTxt } from '../../middleware/robots.js';
 import { resolveRateLimitConfig } from '../../middleware/rate-limiter.js';
-import { logRequest, generateTraceId, shouldLogPath } from '../../middleware/request-logger.js';
+import { log, logRequest, generateTraceId, shouldLogPath } from '../../middleware/request-logger.js';
 import { applySecurityHeaders } from '../../middleware/security-headers.js';
 import { isCrawlTrap } from '../../middleware/robots.js';
 import { extractClientIp, shouldSkipIpTracking, createRequestMetadata } from '../../middleware/ip-tracking.js';
@@ -34,6 +34,7 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
   const securityConfig = resolveSecurityConfig(config.security, environment);
   const robotsConfig = resolveRobotsConfig(config.robots, environment);
   const rateLimitConfig = resolveRateLimitConfig(config.rateLimit);
+  let proxyWarningEmitted = false;
 
   return {
     securityHeaders() {
@@ -62,12 +63,19 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
       }
 
       return (req: any, _res: any, next: any) => {
+        if (!ipConfig.trustProxyHeaders && req.headers['x-forwarded-for'] && !proxyWarningEmitted) {
+          proxyWarningEmitted = true;
+          log('warn', 'Ignoring X-Forwarded-For because ipTracking.trustProxyHeaders is not enabled', {
+            path: req.path,
+            recommendation: 'Configure Express trust proxy and enable trustProxyHeaders only for known proxy networks',
+          });
+        }
         if (shouldSkipIpTracking(req.path)) {
           req.requestMetadata = {};
           return next();
         }
 
-        const ip = extractClientIp(req.headers, req.socket?.remoteAddress, ipConfig.trustProxyHeaders === true);
+        const ip = extractClientIp(req.headers, req.socket?.remoteAddress, { trustProxyHeaders: ipConfig.trustProxyHeaders === true });
         const metadata = createRequestMetadata(
           ip,
           ipConfig,
@@ -86,7 +94,7 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
       }
 
       return async (req: any, res: any, next: any) => {
-        const ip = req.requestMetadata?.ip || extractClientIp(req.headers, req.socket?.remoteAddress, config.ipTracking?.trustProxyHeaders === true);
+        const ip = req.requestMetadata?.ip || extractClientIp(req.headers, req.socket?.remoteAddress, { trustProxyHeaders: config.ipTracking?.trustProxyHeaders === true });
         const userId = req.user?.sub || req.user?.id || null;
 
         const routeRule = matchRateLimitRule(req.path, req.method, rateLimitConfig.rules || []);
