@@ -1,4 +1,5 @@
-import type { WebFoundationConfig } from '../../types.js';
+import type { SitemapEntry, SitemapSource, WebFoundationConfig } from '../../types.js';
+import type { PageMetadata } from '../../seo/metadata.js';
 import { resolveSecurityConfig } from '../../middleware/security-headers.js';
 import { resolveRobotsConfig, generateRobotsTxt } from '../../middleware/robots.js';
 import { resolveRateLimitConfig } from '../../middleware/rate-limiter.js';
@@ -9,9 +10,12 @@ import { extractClientIp, shouldSkipIpTracking, createRequestMetadata } from '..
 import { matchRateLimitRule, getRateLimitKey, checkRateLimit } from '../../middleware/rate-limiter.js';
 import { globalHealthChecker } from '../../middleware/health-check.js';
 import { normalizeUrl } from '../../middleware/canonical-url.js';
+import { buildSitemapIndexFromSources, generateSitemapXml, prepareSitemapEntries } from '../../seo/sitemap.js';
+import { renderHtmlDocument } from '../../rendering/document.js';
 
 export interface ExpressMiddlewareOptions {
   config: WebFoundationConfig;
+  sitemapSources?: SitemapSource[];
   onRequestLog?: (data: {
     method: string;
     path: string;
@@ -25,7 +29,7 @@ export interface ExpressMiddlewareOptions {
 }
 
 export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
-  const { config, onRequestLog } = opts;
+  const { config, onRequestLog, sitemapSources = [] } = opts;
   const environment = config.environment || 'production';
   const securityConfig = resolveSecurityConfig(config.security, environment);
   const robotsConfig = resolveRobotsConfig(config.robots, environment);
@@ -204,6 +208,83 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
       };
     },
 
+
+    sitemapXml() {
+      return async (_req: any, res: any, next: any) => {
+        try {
+          if (sitemapSources.length > 1) {
+            res.type('application/xml');
+            return res.send(buildSitemapIndexFromSources(config.app.baseUrl, sitemapSources));
+          }
+          const source = sitemapSources[0];
+          const entries = source
+            ? (typeof source.entries === 'function' ? await source.entries() : source.entries)
+            : [];
+          res.type('application/xml');
+          return res.send(generateSitemapXml(prepareSitemapEntries(entries).slice(0, 50_000)));
+        } catch (error) {
+          next(error);
+        }
+      };
+    },
+
+    sitemapSource(source: SitemapSource) {
+      return async (_req: any, res: any, next: any) => {
+        try {
+          const entries = typeof source.entries === 'function' ? await source.entries() : source.entries;
+          res.type('application/xml');
+          return res.send(generateSitemapXml(prepareSitemapEntries(entries).slice(0, 50_000)));
+        } catch (error) {
+          next(error);
+        }
+      };
+    },
+
+    permanentRedirect(target: string | ((req: any) => string)) {
+      return (req: any, res: any) => res.redirect(301, typeof target === 'function' ? target(req) : target);
+    },
+
+    notFound(metadata?: PageMetadata) {
+      return (_req: any, res: any) => {
+        res.status(404);
+        if (metadata) return res.type('html').send(renderHtmlDocument({ metadata, bodyHtml: '<main><h1>Not found</h1></main>' }));
+        return res.json({ error: 'Not found', status: 404 });
+      };
+    },
+
+    gone(metadata?: PageMetadata) {
+      return (_req: any, res: any) => {
+        res.status(410);
+        if (metadata) return res.type('html').send(renderHtmlDocument({ metadata, bodyHtml: '<main><h1>Gone</h1></main>' }));
+        return res.json({ error: 'Gone', status: 410 });
+      };
+    },
+
+    errorHandler(options: { exposeErrors?: boolean; metadata?: PageMetadata } = {}) {
+      return (error: unknown, _req: any, res: any, _next: any) => {
+        const message = options.exposeErrors && error instanceof Error ? error.message : 'Internal server error';
+        res.status(500);
+        if (options.metadata) {
+          return res.type('html').send(renderHtmlDocument({
+            metadata: { ...options.metadata, robots: 'noindex,nofollow' },
+            bodyHtml: `<main><h1>Internal server error</h1><p>${escapeHtml(message)}</p></main>`,
+          }));
+        }
+        return res.json({ error: message, status: 500 });
+      };
+    },
+
+    renderPage(resolve: (req: any) => Promise<{ metadata: PageMetadata; bodyHtml: string; status?: number; language?: string; headHtml?: string; scripts?: Array<{ src: string; type?: string; async?: boolean; defer?: boolean }> }> | { metadata: PageMetadata; bodyHtml: string; status?: number; language?: string; headHtml?: string; scripts?: Array<{ src: string; type?: string; async?: boolean; defer?: boolean }> }) {
+      return async (req: any, res: any, next: any) => {
+        try {
+          const page = await resolve(req);
+          res.status(page.status || 200).type('html').send(renderHtmlDocument(page));
+        } catch (error) {
+          next(error);
+        }
+      };
+    },
+
     applyAll(app: any) {
       app.use(this.securityHeaders());
       app.use(this.crawlTrapBlocker());
@@ -213,6 +294,10 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
       app.use(this.canonicalRedirect());
 
       app.get('/robots.txt', this.robotsTxt());
+      app.get('/sitemap.xml', this.sitemapXml());
+      for (const source of sitemapSources) {
+        app.get(`/sitemap-${encodeURIComponent(source.name)}.xml`, this.sitemapSource(source));
+      }
       app.get('/health', this.healthCheck());
     },
 
@@ -221,4 +306,9 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
     robotsConfig,
     rateLimitConfig,
   };
+}
+
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
