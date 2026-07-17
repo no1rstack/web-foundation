@@ -99,8 +99,9 @@ export function buildFullCanonicalUrl(
   protocol: string = 'https'
 ): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  const cleanDomain = baseDomain.replace(/\/$/, '');
-  return `${protocol}://${cleanDomain}${cleanPath}`;
+  const originInput = /^https?:\/\//i.test(baseDomain) ? baseDomain : `${protocol}://${baseDomain}`;
+  const origin = new URL(originInput).origin;
+  return new URL(cleanPath, `${origin}/`).toString();
 }
 
 export function normalizeUrl(
