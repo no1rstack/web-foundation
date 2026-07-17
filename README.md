@@ -82,6 +82,41 @@ Apply authentication before rate limiting when a rule uses `keyType: 'user'`.
 | `@noirstack/web-foundation/seo` | Sitemap, metadata, structured data |
 | `@noirstack/web-foundation/quality` | Content scoring and publication gates |
 
+## Complete SEO metadata
+
+```ts
+import {
+  MetadataBuilder,
+  renderMetadataTags,
+  buildOrganizationSchema,
+} from '@noirstack/web-foundation/seo';
+
+const metadata = new MetadataBuilder({
+  baseUrl: 'https://example.com',
+  brandName: 'Example',
+  defaultTitle: 'Example platform',
+  defaultDescription: 'Build and operate your data platform.',
+  themeColor: '#101416',
+}).buildAll({
+  title: 'Platform',
+  description: 'Operate databases, APIs, identity, and realtime services.',
+  path: '/platform',
+  locale: 'en_US',
+  alternates: [
+    { hrefLang: 'en', href: 'https://example.com/platform' },
+    { hrefLang: 'x-default', href: 'https://example.com/platform' },
+  ],
+  structuredData: buildOrganizationSchema({
+    name: 'Example',
+    url: 'https://example.com',
+  }),
+});
+
+const headHtml = renderMetadataTags(metadata);
+```
+
+The renderer emits title, description, robots, canonical URL, theme color, Open Graph, Twitter Card, hreflang alternates, and escaped JSON-LD. Sitemap preparation validates absolute URLs, removes duplicates, normalizes modification dates, and honors the 50,000 URL protocol limit.
+
 ## Development
 
 ```bash
