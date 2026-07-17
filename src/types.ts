@@ -123,6 +123,8 @@ export interface IpTrackingConfig {
   asnDetection?: boolean;
   vpnDetection?: boolean;
   botScoring?: boolean;
+  /** Trust X-Forwarded-For only when Express is behind a configured trusted proxy. */
+  trustProxyHeaders?: boolean;
   regionalAllowDeny?: {
     allow?: string[];
     deny?: string[];
