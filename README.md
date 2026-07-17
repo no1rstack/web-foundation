@@ -117,6 +117,56 @@ const headHtml = renderMetadataTags(metadata);
 
 The renderer emits title, description, robots, canonical URL, theme color, Open Graph, Twitter Card, hreflang alternates, and escaped JSON-LD. Sitemap preparation validates absolute URLs, removes duplicates, normalizes modification dates, and honors the 50,000 URL protocol limit.
 
+## Semantic layer and rich results
+
+The SEO package provides typed Schema.org generators, so applications do not need to hand-author JSON-LD objects. Supported entities include:
+
+- `Organization`, `Corporation`, `LocalBusiness`, and `NGO`
+- `Person` and authority links through `sameAs`
+- `CreativeWork`, `Article`, `BlogPosting`, and `TechArticle`
+- `Product` with offers, availability, and aggregate ratings
+- `Event` with dates, attendance mode, location, organizer, performers, and offers
+- `SoftwareApplication`, `FAQPage`, `BreadcrumbList`, `HowTo`, and `Course`
+
+```ts
+import {
+  buildEventSchema,
+  buildOrganizationSchema,
+  buildProductSchema,
+  renderJsonLd,
+  validateRichResultData,
+} from '@noirstack/web-foundation/seo';
+
+const organization = buildOrganizationSchema({
+  name: 'Example',
+  schemaType: 'Organization',
+  url: 'https://example.com',
+  sameAs: ['https://www.linkedin.com/company/example'],
+});
+
+const product = buildProductSchema({
+  name: 'Platform',
+  description: 'Managed data platform.',
+  url: 'https://example.com/platform',
+  offers: { price: 99, priceCurrency: 'USD', availability: 'InStock' },
+  review: { ratingValue: 4.8, reviewCount: 37 },
+});
+
+const event = buildEventSchema({
+  name: 'Platform briefing',
+  url: 'https://example.com/events/briefing',
+  startDate: new Date('2026-09-01T14:00:00Z'),
+  eventAttendanceMode: 'OnlineEventAttendanceMode',
+  location: { name: 'Live stream', url: 'https://example.com/live/briefing' },
+  organizer: { name: 'Example', url: 'https://example.com' },
+});
+
+validateRichResultData(product);
+const jsonLd = renderJsonLd([organization, product, event]);
+```
+
+`renderJsonLd` produces encapsulated `application/ld+json` scripts and escapes script-termination payloads. Validate deployed pages with Google's Rich Results Test and the Schema.org Markup Validator; eligibility remains subject to each search engine's content and structured-data policies.
+
 ## Crawlable Express and Vite applications
 
 Pass sitemap sources to the Express adapter. `applyAll` registers `/robots.txt`, `/sitemap.xml`, each `/sitemap-{source}.xml`, and `/health`.
