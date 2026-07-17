@@ -63,7 +63,7 @@ export interface RobotsPattern {
 
 export interface StructuredDataPreset {
   type: string;
-  schema: 'Organization' | 'WebSite' | 'Product' | 'SoftwareApplication' | 'Article' | 'BlogPosting' | 'FAQ' | 'HowTo' | 'Course' | 'Documentation' | 'BreadcrumbList';
+  schema: 'Organization' | 'Corporation' | 'LocalBusiness' | 'NGO' | 'Person' | 'CreativeWork' | 'Event' | 'WebSite' | 'Product' | 'SoftwareApplication' | 'Article' | 'BlogPosting' | 'FAQ' | 'HowTo' | 'Course' | 'Documentation' | 'BreadcrumbList';
   defaults: Record<string, unknown>;
 }
 
