@@ -1,8 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { MetadataBuilder, validateMetadata } from '../src/seo/metadata.js';
-import { generateSitemapXml, generateSitemapIndex, escapeXml } from '../src/seo/sitemap.js';
+import { MetadataBuilder, renderMetadataTags, validateMetadata } from '../src/seo/metadata.js';
+import { generateSitemapXml, generateSitemapIndex, escapeXml, prepareSitemapEntries, validateSitemapEntry } from '../src/seo/sitemap.js';
 import { buildOrganizationSchema, buildBreadcrumbSchema, buildFAQSchema, renderJsonLd } from '../src/seo/structured-data.js';
 
 describe('seo', () => {
@@ -145,5 +145,54 @@ describe('seo', () => {
       assert.ok(html.includes('<script type="application/ld+json">'));
       assert.ok(html.includes('"@type":"Organization"'));
     });
+  });
+});
+
+
+describe('SEO compatibility hardening', () => {
+  it('renders canonical, social, localized, and theme metadata', () => {
+    const builder = new MetadataBuilder({
+      baseUrl: 'https://example.com',
+      brandName: 'Example',
+      defaultTitle: 'Example platform',
+      defaultDescription: 'A complete platform description suitable for search and social previews.',
+      themeColor: '#101416',
+    });
+    const html = renderMetadataTags(builder.buildAll({
+      title: 'Database control plane',
+      description: 'Operate databases, APIs, identity, realtime services, and infrastructure from one governed workspace.',
+      path: '/platform',
+      locale: 'en_US',
+      alternates: [
+        { hrefLang: 'en', href: 'https://example.com/platform' },
+        { hrefLang: 'x-default', href: 'https://example.com/platform' },
+      ],
+    }));
+    assert.match(html, /rel="canonical" href="https:\/\/example\.com\/platform"/);
+    assert.match(html, /name="twitter:title"/);
+    assert.match(html, /property="og:locale" content="en_US"/);
+    assert.match(html, /hreflang="x-default"/);
+    assert.match(html, /name="theme-color"/);
+  });
+
+  it('prevents JSON-LD from terminating its script element', () => {
+    const html = renderJsonLd({
+      '@context': 'https://schema.org',
+      '@type': 'Thing',
+      name: '</script><script>alert(1)</script>',
+    });
+    assert.equal(html.includes('</script><script>'), false);
+    assert.match(html, /\\u003c\/script>/);
+  });
+
+  it('validates, deduplicates, and sorts sitemap entries', () => {
+    const entries = prepareSitemapEntries([
+      { loc: 'https://example.com/z', priority: 0.5 },
+      { loc: 'not-a-url' },
+      { loc: 'https://example.com/a', lastmod: '2026-01-01' },
+      { loc: 'https://example.com/z', priority: 0.5 },
+    ]);
+    assert.deepEqual(entries.map((entry) => entry.loc), ['https://example.com/a', 'https://example.com/z']);
+    assert.equal(validateSitemapEntry({ loc: 'https://example.com/#fragment' }).valid, false);
   });
 });
