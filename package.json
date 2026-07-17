@@ -26,7 +26,11 @@
       "types": "./dist/quality/index.d.ts",
       "import": "./dist/quality/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./rendering": {
+      "types": "./dist/rendering/index.d.ts",
+      "import": "./dist/rendering/index.js"
+    }
   },
   "files": [
     "dist"
