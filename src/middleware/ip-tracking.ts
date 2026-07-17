@@ -1,11 +1,19 @@
 import type { IpTrackingConfig, RequestMetadata, GeoResult } from '../types.js';
 import crypto from 'crypto';
 
+export interface ClientIpOptions {
+  /** Accept X-Forwarded-For only when the request arrived through a configured trusted proxy. */
+  trustProxyHeaders: boolean;
+}
+
 export function extractClientIp(
   headers: Record<string, string | string[] | undefined>,
   remoteAddress?: string,
-  trustProxyHeaders = true
+  options: ClientIpOptions | boolean = true
 ): string | null {
+  // Boolean support is retained for backward compatibility. New callers should
+  // use the options object so proxy trust is visible at the call site.
+  const trustProxyHeaders = typeof options === 'boolean' ? options : options.trustProxyHeaders;
   const forwarded = headers['x-forwarded-for'];
 
   let forwardedValue: string | undefined;
