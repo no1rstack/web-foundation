@@ -1,6 +1,6 @@
 {
   "name": "@noirstack/web-foundation",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Shared web foundation platform — SEO, security, analytics, observability, middleware for all no1rstack apps",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,6 +25,11 @@
     "./quality": {
       "types": "./dist/quality/index.d.ts",
       "import": "./dist/quality/index.js"
+    },
+    "./package.json": "./package.json",
+    "./rendering": {
+      "types": "./dist/rendering/index.d.ts",
+      "import": "./dist/rendering/index.js"
     }
   },
   "files": [
@@ -35,8 +40,9 @@
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "test": "node --import tsx --test tests/**/*.test.ts",
-    "prepublishOnly": "npm run build"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "prepublishOnly": "npm run check",
+    "check": "npm run lint && npm test && npm run build"
   },
   "keywords": [
     "seo",
@@ -52,12 +58,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://git.noirstack.com/noirstack/packages.git",
-    "directory": "web-foundation"
+    "url": "git+https://github.com/no1rstack/web-foundation.git"
   },
-  "homepage": "https://git.noirstack.com/noirstack/packages/-/tree/master/web-foundation",
+  "homepage": "https://github.com/no1rstack/web-foundation#readme",
   "bugs": {
-    "url": "https://git.noirstack.com/noirstack/packages/-/issues"
+    "url": "https://github.com/no1rstack/web-foundation/issues"
   },
   "peerDependencies": {
     "express": "^4.17.0 || ^5.0.0"
@@ -74,6 +79,11 @@
     "typescript": "~5.8.2"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
   }
 }

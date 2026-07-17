@@ -2,6 +2,7 @@ import type { StructuredDataPayload } from '../types.js';
 
 export interface OrgSchemaInput {
   name: string;
+  schemaType?: 'Organization' | 'Corporation' | 'LocalBusiness' | 'NGO';
   url: string;
   logo?: string;
   sameAs?: string[];
@@ -11,7 +12,7 @@ export interface OrgSchemaInput {
 export function buildOrganizationSchema(input: OrgSchemaInput): StructuredDataPayload {
   const ld: StructuredDataPayload = {
     '@context': 'https://schema.org',
-    '@type': 'Organization',
+    '@type': input.schemaType || 'Organization',
     name: input.name,
     url: input.url,
   };
@@ -343,7 +344,7 @@ export function buildDocumentationSchema(input: DocumentationSchemaInput): Struc
 export function renderJsonLd(data: StructuredDataPayload | StructuredDataPayload[]): string {
   const payloads = Array.isArray(data) ? data : [data];
   return payloads
-    .map((p) => `<script type="application/ld+json">${JSON.stringify(p)}</script>`)
+    .map((p) => `<script type="application/ld+json">${JSON.stringify(p).replace(/</g, '\\u003c')}</script>`)
     .join('\n');
 }
 
@@ -360,4 +361,153 @@ export function validateStructuredData(
   }
 
   return { valid: missingRequired.length === 0, missingRequired };
+}
+
+
+export interface PersonSchemaInput {
+  name: string;
+  url?: string;
+  image?: string;
+  description?: string;
+  jobTitle?: string;
+  worksFor?: { name: string; url?: string };
+  sameAs?: string[];
+}
+
+export function buildPersonSchema(input: PersonSchemaInput): StructuredDataPayload {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: input.name,
+    ...(input.url ? { url: input.url } : {}),
+    ...(input.image ? { image: input.image } : {}),
+    ...(input.description ? { description: input.description } : {}),
+    ...(input.jobTitle ? { jobTitle: input.jobTitle } : {}),
+    ...(input.worksFor ? {
+      worksFor: {
+        '@type': 'Organization',
+        name: input.worksFor.name,
+        ...(input.worksFor.url ? { url: input.worksFor.url } : {}),
+      },
+    } : {}),
+    ...(input.sameAs?.length ? { sameAs: input.sameAs } : {}),
+  };
+}
+
+export interface CreativeWorkSchemaInput {
+  name: string;
+  url: string;
+  description?: string;
+  image?: string | string[];
+  datePublished?: Date;
+  dateModified?: Date;
+  author?: { type?: 'Person' | 'Organization'; name: string; url?: string };
+  publisher?: { name: string; url?: string; logo?: string };
+  sameAs?: string[];
+}
+
+export function buildCreativeWorkSchema(input: CreativeWorkSchemaInput): StructuredDataPayload {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: input.name,
+    url: input.url,
+    ...(input.description ? { description: input.description } : {}),
+    ...(input.image ? { image: input.image } : {}),
+    ...(input.datePublished ? { datePublished: input.datePublished.toISOString() } : {}),
+    ...(input.dateModified ? { dateModified: input.dateModified.toISOString() } : {}),
+    ...(input.author ? {
+      author: {
+        '@type': input.author.type || 'Person',
+        name: input.author.name,
+        ...(input.author.url ? { url: input.author.url } : {}),
+      },
+    } : {}),
+    ...(input.publisher ? {
+      publisher: {
+        '@type': 'Organization',
+        name: input.publisher.name,
+        ...(input.publisher.url ? { url: input.publisher.url } : {}),
+        ...(input.publisher.logo ? { logo: { '@type': 'ImageObject', url: input.publisher.logo } } : {}),
+      },
+    } : {}),
+    ...(input.sameAs?.length ? { sameAs: input.sameAs } : {}),
+  };
+}
+
+export interface EventSchemaInput {
+  name: string;
+  url: string;
+  startDate: Date;
+  endDate?: Date;
+  description?: string;
+  image?: string | string[];
+  eventStatus?: 'EventScheduled' | 'EventCancelled' | 'EventMovedOnline' | 'EventPostponed' | 'EventRescheduled';
+  eventAttendanceMode?: 'OfflineEventAttendanceMode' | 'OnlineEventAttendanceMode' | 'MixedEventAttendanceMode';
+  location?: { name?: string; address?: string; url?: string };
+  organizer?: { name: string; url?: string };
+  performer?: Array<{ name: string; url?: string }>;
+  offers?: Array<{ price: number; priceCurrency: string; availability?: 'InStock' | 'SoldOut' | 'PreOrder'; url?: string; validFrom?: Date }>;
+}
+
+export function buildEventSchema(input: EventSchemaInput): StructuredDataPayload {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Event',
+    name: input.name,
+    url: input.url,
+    startDate: input.startDate.toISOString(),
+    ...(input.endDate ? { endDate: input.endDate.toISOString() } : {}),
+    ...(input.description ? { description: input.description } : {}),
+    ...(input.image ? { image: input.image } : {}),
+    ...(input.eventStatus ? { eventStatus: `https://schema.org/${input.eventStatus}` } : {}),
+    ...(input.eventAttendanceMode ? { eventAttendanceMode: `https://schema.org/${input.eventAttendanceMode}` } : {}),
+    ...(input.location ? {
+      location: input.location.url
+        ? { '@type': 'VirtualLocation', url: input.location.url, ...(input.location.name ? { name: input.location.name } : {}) }
+        : { '@type': 'Place', ...(input.location.name ? { name: input.location.name } : {}), ...(input.location.address ? { address: input.location.address } : {}) },
+    } : {}),
+    ...(input.organizer ? {
+      organizer: { '@type': 'Organization', name: input.organizer.name, ...(input.organizer.url ? { url: input.organizer.url } : {}) },
+    } : {}),
+    ...(input.performer?.length ? {
+      performer: input.performer.map((performer) => ({ '@type': 'Person', name: performer.name, ...(performer.url ? { url: performer.url } : {}) })),
+    } : {}),
+    ...(input.offers?.length ? {
+      offers: input.offers.map((offer) => ({
+        '@type': 'Offer',
+        price: offer.price,
+        priceCurrency: offer.priceCurrency,
+        ...(offer.availability ? { availability: `https://schema.org/${offer.availability}` } : {}),
+        ...(offer.url ? { url: offer.url } : {}),
+        ...(offer.validFrom ? { validFrom: offer.validFrom.toISOString() } : {}),
+      })),
+    } : {}),
+  };
+}
+
+export function validateRichResultData(data: StructuredDataPayload): { valid: boolean; issues: string[] } {
+  const issues = [...validateStructuredData(data).missingRequired];
+  const requiredByType: Record<string, string[]> = {
+    Organization: ['name', 'url'],
+    Person: ['name'],
+    Product: ['name', 'description', 'url'],
+    Event: ['name', 'url', 'startDate'],
+    Article: ['headline', 'description', 'url', 'datePublished'],
+    BlogPosting: ['headline', 'description', 'url', 'datePublished'],
+    TechArticle: ['headline', 'description', 'url'],
+    FAQPage: ['mainEntity'],
+    BreadcrumbList: ['itemListElement'],
+    SoftwareApplication: ['name', 'description', 'url'],
+    CreativeWork: ['name', 'url'],
+  };
+  for (const property of requiredByType[String(data['@type'])] || []) {
+    if (data[property] === undefined || data[property] === null || data[property] === '') {
+      issues.push(`${property} is required for ${String(data['@type'])}`);
+    }
+  }
+  if (data['@type'] === 'Product' && data.offers === undefined && data.aggregateRating === undefined) {
+    issues.push('Product rich results should provide offers or aggregateRating');
+  }
+  return { valid: issues.length === 0, issues };
 }

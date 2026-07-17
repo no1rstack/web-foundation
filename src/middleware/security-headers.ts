@@ -2,7 +2,7 @@ import type { SecurityConfig } from '../types.js';
 
 const PRODUCTION_DEFAULTS: SecurityConfig = {
   contentSecurityPolicy:
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:; frame-ancestors 'self';",
+    "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:; frame-ancestors 'self'; form-action 'self';",
   frameOptions: 'SAMEORIGIN',
   referrerPolicy: 'strict-origin-when-cross-origin',
   permissionsPolicy: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()',

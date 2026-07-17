@@ -63,7 +63,7 @@ export interface RobotsPattern {
 
 export interface StructuredDataPreset {
   type: string;
-  schema: 'Organization' | 'WebSite' | 'Product' | 'SoftwareApplication' | 'Article' | 'BlogPosting' | 'FAQ' | 'HowTo' | 'Course' | 'Documentation' | 'BreadcrumbList';
+  schema: 'Organization' | 'Corporation' | 'LocalBusiness' | 'NGO' | 'Person' | 'CreativeWork' | 'Event' | 'WebSite' | 'Product' | 'SoftwareApplication' | 'Article' | 'BlogPosting' | 'FAQ' | 'HowTo' | 'Course' | 'Documentation' | 'BreadcrumbList';
   defaults: Record<string, unknown>;
 }
 
@@ -123,6 +123,8 @@ export interface IpTrackingConfig {
   asnDetection?: boolean;
   vpnDetection?: boolean;
   botScoring?: boolean;
+  /** Trust X-Forwarded-For only when Express is behind a configured trusted proxy. */
+  trustProxyHeaders?: boolean;
   regionalAllowDeny?: {
     allow?: string[];
     deny?: string[];
@@ -234,6 +236,11 @@ export interface StructuredDataPayload {
   '@context': 'https://schema.org';
   '@type': string;
   [key: string]: unknown;
+}
+
+export interface AlternateLanguage {
+  hrefLang: string;
+  href: string;
 }
 
 export interface OpenGraphData {

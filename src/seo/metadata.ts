@@ -1,4 +1,4 @@
-import type { MetadataTemplates, OpenGraphData } from '../types.js';
+import type { AlternateLanguage, MetadataTemplates, OpenGraphData, StructuredDataPayload } from '../types.js';
 
 export interface PageMetadata {
   title: string;
@@ -6,8 +6,10 @@ export interface PageMetadata {
   canonicalUrl?: string;
   robots?: string;
   og?: OpenGraphData;
-  structuredData?: Record<string, unknown>;
+  structuredData?: StructuredDataPayload | StructuredDataPayload[];
   breadcrumbs?: Array<{ name: string; url: string }>;
+  alternates?: AlternateLanguage[];
+  themeColor?: string;
 }
 
 export interface MetadataInput {
@@ -20,6 +22,10 @@ export interface MetadataInput {
   modifiedAt?: Date;
   author?: string;
   section?: string;
+  locale?: string;
+  alternates?: AlternateLanguage[];
+  robots?: string;
+  structuredData?: StructuredDataPayload | StructuredDataPayload[];
 }
 
 export class MetadataBuilder {
@@ -107,7 +113,9 @@ export class MetadataBuilder {
       ogUrl: url,
       ogType: input.ogType || 'website',
       ogSiteName: this.brandName,
+      ogLocale: input.locale,
       twitterCard: this.determineTwitterCard(input.ogType),
+      twitterImage: ogImage,
     };
   }
 
@@ -116,8 +124,11 @@ export class MetadataBuilder {
       title: this.buildTitle(input.title),
       description: this.buildDescription(input.description),
       canonicalUrl: input.path ? this.buildCanonicalUrl(input.path) : undefined,
-      robots: this.buildRobotsDirective(),
+      robots: input.robots || this.buildRobotsDirective(),
       og: this.buildOpenGraph(input),
+      structuredData: input.structuredData,
+      alternates: input.alternates,
+      themeColor: this.themeColor,
     };
   }
 
@@ -206,4 +217,46 @@ export function validateMetadata(metadata: PageMetadata): {
   }
 
   return { valid: issues.length === 0, issues };
+}
+
+
+export function renderMetadataTags(metadata: PageMetadata): string {
+  const tags: string[] = [
+    `<title>${escapeText(metadata.title)}</title>`,
+    `<meta name="description" content="${escapeAttr(metadata.description)}">`,
+  ];
+  if (metadata.robots) tags.push(`<meta name="robots" content="${escapeAttr(metadata.robots)}">`);
+  if (metadata.canonicalUrl) tags.push(`<link rel="canonical" href="${escapeAttr(metadata.canonicalUrl)}">`);
+  if (metadata.themeColor) tags.push(`<meta name="theme-color" content="${escapeAttr(metadata.themeColor)}">`);
+  for (const alternate of metadata.alternates || []) {
+    tags.push(`<link rel="alternate" hreflang="${escapeAttr(alternate.hrefLang)}" href="${escapeAttr(alternate.href)}">`);
+  }
+  if (metadata.og) {
+    const og = metadata.og;
+    tags.push(`<meta property="og:title" content="${escapeAttr(og.ogTitle)}">`);
+    tags.push(`<meta property="og:description" content="${escapeAttr(og.ogDescription)}">`);
+    tags.push(`<meta property="og:image" content="${escapeAttr(og.ogImage)}">`);
+    tags.push(`<meta property="og:url" content="${escapeAttr(og.ogUrl)}">`);
+    tags.push(`<meta property="og:type" content="${escapeAttr(og.ogType)}">`);
+    if (og.ogSiteName) tags.push(`<meta property="og:site_name" content="${escapeAttr(og.ogSiteName)}">`);
+    if (og.ogLocale) tags.push(`<meta property="og:locale" content="${escapeAttr(og.ogLocale)}">`);
+    if (og.twitterCard) tags.push(`<meta name="twitter:card" content="${escapeAttr(og.twitterCard)}">`);
+    tags.push(`<meta name="twitter:title" content="${escapeAttr(og.ogTitle)}">`);
+    tags.push(`<meta name="twitter:description" content="${escapeAttr(og.ogDescription)}">`);
+    tags.push(`<meta name="twitter:image" content="${escapeAttr(og.twitterImage || og.ogImage)}">`);
+    if (og.twitterSite) tags.push(`<meta name="twitter:site" content="${escapeAttr(og.twitterSite)}">`);
+    if (og.twitterCreator) tags.push(`<meta name="twitter:creator" content="${escapeAttr(og.twitterCreator)}">`);
+  }
+  if (metadata.structuredData) {
+    const values = Array.isArray(metadata.structuredData) ? metadata.structuredData : [metadata.structuredData];
+    for (const value of values) {
+      const json = JSON.stringify(value).replace(/</g, '\\u003c');
+      tags.push(`<script type="application/ld+json">${json}</script>`);
+    }
+  }
+  return tags.join('\n');
+}
+
+function escapeText(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
