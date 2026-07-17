@@ -1,5 +1,5 @@
 import express from 'express';
-import { createWebFoundation, createExpressMiddleware, MetadataBuilder, computeQualityScore, analyzeContent } from '@no1rstack/web-foundation';
+import { createWebFoundation, createExpressMiddleware, MetadataBuilder, computeQualityScore, analyzeContent } from '@noirstack/web-foundation';
 
 const config = createWebFoundation({
   environment: 'development',

@@ -181,6 +181,9 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
       return (req: any, res: any, next: any) => {
         if (req.method !== 'GET') return next();
         if (req.path.startsWith('/api/')) return next();
+        if (/^\/assets\//.test(req.path) || /\.(js|mjs|css|woff2?|png|jpe?g|gif|svg|ico|webp|map)$/i.test(req.path)) {
+          return next();
+        }
 
         const { pathname, search } = normalizeUrl(req.url, config.seo?.canonicalRules);
 

@@ -1,5 +1,5 @@
 {
-  "name": "@no1rstack/web-foundation",
+  "name": "@noirstack/web-foundation",
   "version": "0.1.0",
   "description": "Shared web foundation platform — SEO, security, analytics, observability, middleware for all no1rstack apps",
   "type": "module",
@@ -50,6 +50,15 @@
     "canonical"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.noirstack.com/noirstack/packages.git",
+    "directory": "web-foundation"
+  },
+  "homepage": "https://git.noirstack.com/noirstack/packages/-/tree/master/web-foundation",
+  "bugs": {
+    "url": "https://git.noirstack.com/noirstack/packages/-/issues"
+  },
   "peerDependencies": {
     "express": "^4.17.0 || ^5.0.0"
   },

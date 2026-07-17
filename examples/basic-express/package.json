@@ -7,7 +7,7 @@
     "dev": "tsx server.ts"
   },
   "dependencies": {
-    "@no1rstack/web-foundation": "file:../..",
+    "@noirstack/web-foundation": "file:../..",
     "express": "^4.21.2"
   },
   "devDependencies": {
