@@ -63,7 +63,7 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
           return next();
         }
 
-        const ip = extractClientIp(req.headers, req.socket?.remoteAddress);
+        const ip = extractClientIp(req.headers, req.socket?.remoteAddress, ipConfig.trustProxyHeaders === true);
         const metadata = createRequestMetadata(
           ip,
           ipConfig,
@@ -82,10 +82,17 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
       }
 
       return async (req: any, res: any, next: any) => {
-        const ip = req.requestMetadata?.ip || extractClientIp(req.headers, req.socket?.remoteAddress);
+        const ip = req.requestMetadata?.ip || extractClientIp(req.headers, req.socket?.remoteAddress, config.ipTracking?.trustProxyHeaders === true);
         const userId = req.user?.sub || req.user?.id || null;
 
-        const rule = matchRateLimitRule(req.path, req.method, rateLimitConfig.rules || []);
+        const routeRule = matchRateLimitRule(req.path, req.method, rateLimitConfig.rules || []);
+        const rule = routeRule || {
+          path: '*',
+          windowMs: rateLimitConfig.globalWindowMs || 60_000,
+          max: rateLimitConfig.globalMax || 100,
+          keyType: 'ip' as const,
+          action: 'block' as const,
+        };
 
         if (rule) {
           const key = getRateLimitKey(rule, ip, userId);
@@ -93,7 +100,8 @@ export function createExpressMiddleware(opts: ExpressMiddlewareOptions) {
 
           res.setHeader('X-RateLimit-Limit', rule.max);
           res.setHeader('X-RateLimit-Remaining', result.remaining);
-          res.setHeader('X-RateLimit-Reset', result.resetAt);
+          res.setHeader('X-RateLimit-Reset', Math.ceil(result.resetAt / 1000));
+          if (result.retryAfter) res.setHeader('Retry-After', result.retryAfter);
 
           if (!result.allowed) {
             if (rule.action === 'block') {
