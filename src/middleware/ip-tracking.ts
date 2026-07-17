@@ -3,7 +3,8 @@ import crypto from 'crypto';
 
 export function extractClientIp(
   headers: Record<string, string | string[] | undefined>,
-  remoteAddress?: string
+  remoteAddress?: string,
+  trustProxyHeaders = false
 ): string | null {
   const forwarded = headers['x-forwarded-for'];
 
@@ -16,7 +17,7 @@ export function extractClientIp(
 
   const firstForwardedIp = forwardedValue?.split(',')[0]?.trim();
   const fallbackIp = remoteAddress || null;
-  const rawIp = firstForwardedIp || fallbackIp;
+  const rawIp = trustProxyHeaders ? (firstForwardedIp || fallbackIp) : fallbackIp;
 
   if (!rawIp) return null;
   return rawIp.replace('::ffff:', '');
