@@ -4,7 +4,7 @@ import crypto from 'crypto';
 export function extractClientIp(
   headers: Record<string, string | string[] | undefined>,
   remoteAddress?: string,
-  trustProxyHeaders = false
+  trustProxyHeaders = true
 ): string | null {
   const forwarded = headers['x-forwarded-for'];
 
