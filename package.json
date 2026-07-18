@@ -61,7 +61,10 @@
     "web-vitals",
     "core-web-vitals",
     "performance",
-    "rum"
+    "rum",
+    "schema.org",
+    "json-ld",
+    "ai-media"
   ],
   "license": "MIT",
   "repository": {
@@ -95,6 +98,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "web-vitals": "^5.3.0"
+    "web-vitals": "^5.3.0",
+    "schema-dts": "^2.0.0"
   }
 }
