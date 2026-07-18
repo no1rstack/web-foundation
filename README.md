@@ -117,6 +117,53 @@ const headHtml = renderMetadataTags(metadata);
 
 The renderer emits title, description, robots, canonical URL, theme color, Open Graph, Twitter Card, hreflang alternates, and escaped JSON-LD. Sitemap preparation validates absolute URLs, removes duplicates, normalizes modification dates, and honors the 50,000 URL protocol limit.
 
+## Route manifest and browser metadata
+
+Define public routes once, then derive canonical paths, navigation, sitemap entries, robots allow paths, breadcrumbs, and page metadata from the same typed source of truth. Aliases resolve directly to the canonical route, including nested paths, which prevents canonical chains and drift between navigation and crawl configuration.
+
+```ts
+import {
+  applyBrowserMetadata,
+  defineRouteManifest,
+  MetadataBuilder,
+} from '@noirstack/web-foundation/seo';
+
+const routes = defineRouteManifest([
+  {
+    path: '/docs',
+    aliases: ['/documentation'],
+    navLabel: 'Documentation',
+    title: 'Developer documentation',
+    description: 'Read guides, API references, and architecture documentation.',
+    schemaType: 'CollectionPage',
+    changefreq: 'weekly',
+    priority: 0.8,
+  },
+]);
+
+routes.canonicalPath('/documentation/install'); // /docs/install
+routes.navigation();
+routes.sitemap('https://example.com');
+routes.robotsAllowPaths();
+routes.breadcrumbs('/docs', 'https://example.com');
+
+const input = routes.metadata('/documentation');
+if (input) {
+  const metadata = new MetadataBuilder({
+    baseUrl: 'https://example.com',
+    brandName: 'Example',
+    defaultTitle: 'Example platform',
+    defaultDescription: 'Build and operate governed data services.',
+  }).buildAll(input);
+
+  applyBrowserMetadata(document, metadata, {
+    socialImage: { width: 1200, height: 630, alt: 'Example platform' },
+  });
+}
+```
+
+`applyBrowserMetadata` is framework-neutral and keeps client-routed pages synchronized across the document title, description, robots, canonical URL, theme color, Open Graph, and Twitter Card tags. Server-rendered and static pages should continue using `renderMetadataTags` so crawlers receive the same metadata in the initial HTML.
+
 ## Semantic layer and rich results
 
 The SEO package provides typed Schema.org generators, so applications do not need to hand-author JSON-LD objects. Supported entities include:
