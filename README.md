@@ -165,6 +165,59 @@ if (input) {
 
 `applyBrowserMetadata` is framework-neutral and keeps client-routed pages synchronized across the document title, description, robots, canonical URL, theme color, Open Graph, and Twitter Card tags. Server-rendered and static pages should continue using `renderMetadataTags` so crawlers receive the same metadata in the initial HTML.
 
+## Typed Schema.org for AI, media, and data products
+
+The SEO export includes `schema-dts` 2.x types plus focused builders for AI software, generated images, video, audio, datasets, and data catalogs. Consumers get compile-time Schema.org property validation without hand-maintaining a partial vocabulary.
+
+```ts
+import {
+  buildAiSoftwareApplicationSchema,
+  buildDatasetSchema,
+  buildVideoObjectSchema,
+  defineSchemaGraph,
+  renderJsonLd,
+} from '@noirstack/web-foundation/seo';
+
+const dataset = buildDatasetSchema({
+  name: 'Sanctions entities snapshot',
+  description: 'Normalized entities used by the investigation platform.',
+  url: 'https://example.com/data/sanctions',
+  creator: { name: 'Noir Stack', url: 'https://noirstack.com' },
+  license: 'https://example.com/data-license',
+  variableMeasured: ['entity name', 'program', 'jurisdiction'],
+  distribution: [{
+    contentUrl: 'https://example.com/data/sanctions.json',
+    encodingFormat: 'application/json',
+  }],
+});
+
+const application = buildAiSoftwareApplicationSchema({
+  name: 'Judicium Explorer',
+  description: 'AI-assisted legal and sanctions investigation workspace.',
+  url: 'https://judicium.app',
+  creator: { name: 'Noir Stack', url: 'https://noirstack.com' },
+  featureList: ['Federated search', 'Cited synthesis', 'Entity graph'],
+  supportingDatasets: [{
+    name: 'Sanctions entities snapshot',
+    url: 'https://example.com/data/sanctions',
+  }],
+});
+
+const video = buildVideoObjectSchema({
+  name: 'Investigation briefing',
+  description: 'A cited briefing generated from an investigation workspace.',
+  contentUrl: 'https://example.com/media/briefing.mp4',
+  thumbnailUrl: 'https://example.com/media/briefing.jpg',
+  uploadDate: new Date(),
+  duration: 'PT4M12S',
+  transcript: 'Accessible transcript...',
+});
+
+const jsonLd = renderJsonLd(defineSchemaGraph([dataset, application, video]));
+```
+
+Media builders support discoverability and provenance fields including creator, caption, transcript, encoding format, dimensions, upload date, credit, copyright notice, and licensing URL. Dataset builders support distributions, measured variables, temporal/spatial coverage, licensing, publication dates, and catalog/application relationships.
+
 ## Semantic layer and rich results
 
 The SEO package provides typed Schema.org generators, so applications do not need to hand-author JSON-LD objects. Supported entities include:
