@@ -30,6 +30,10 @@
     "./rendering": {
       "types": "./dist/rendering/index.d.ts",
       "import": "./dist/rendering/index.js"
+    },
+    "./performance": {
+      "types": "./dist/performance/index.d.ts",
+      "import": "./dist/performance/index.js"
     }
   },
   "files": [
@@ -53,7 +57,11 @@
     "structured-data",
     "open-graph",
     "robots",
-    "canonical"
+    "canonical",
+    "web-vitals",
+    "core-web-vitals",
+    "performance",
+    "rum"
   ],
   "license": "MIT",
   "repository": {
@@ -85,5 +93,8 @@
   "sideEffects": false,
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "web-vitals": "^5.3.0"
   }
 }
