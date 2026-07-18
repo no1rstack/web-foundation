@@ -82,6 +82,7 @@ Apply authentication before rate limiting when a rule uses `keyType: 'user'`.
 | `@noirstack/web-foundation/seo` | Sitemap, metadata, structured data |
 | `@noirstack/web-foundation/quality` | Content scoring and publication gates |
 | `@noirstack/web-foundation/performance` | Browser RUM, Core Web Vitals, GA4/GTM, beacon reporters |
+| `@noirstack/web-foundation/audit` | Lighthouse, crawl, accessibility, semantic HTML, and rendered-page audit presets |
 
 ## Complete SEO metadata
 
@@ -374,6 +375,30 @@ These measurements are real-user monitoring (RUM), not a replacement for CrUX:
 Attribution selectors may contain application identifiers. The default sanitizer trims and caps targets at 256 characters; products handling sensitive identifiers should provide `sanitizeDebugTarget` or disable attribution. Measurement can start before analytics consent, but reporters that transmit or persist data must be gated with `enabled` according to the product's consent policy.
 
 Implementation guidance was aligned with the official `web-vitals` limitations, the CrUX/RUM comparison guidance, and Simo Ahava's Core Web Vitals dataLayer and GA4 patterns.
+
+## Shared SEO and accessibility audit toolkit
+
+The `audit` export centralizes quality gates for Lighthouse CI, Linkinator, axe-core, HTML Validate, and Puppeteer-based rendered-page inspection. These tools are optional peer dependencies so production applications do not download browsers or audit CLIs.
+
+```ts
+import {
+  auditRenderedPage,
+  createLighthousePreset,
+  createLinkinatorPreset,
+} from '@noirstack/web-foundation/audit';
+
+export default createLighthousePreset({
+  performanceScore: 0.8,
+  accessibilityScore: 0.95,
+  seoScore: 0.95,
+});
+
+const crawler = createLinkinatorPreset({
+  serverRoot: 'https://preview.example.com',
+});
+```
+
+The complete external audit suite currently requires Node 22 because the latest HTML Validate and Puppeteer releases require it. The normal `web-foundation` runtime remains compatible with Node 20. Audit tooling should run in a dedicated CI job against a built preview or deployment.
 
 ## Development
 
