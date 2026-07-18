@@ -82,6 +82,8 @@ Apply authentication before rate limiting when a rule uses `keyType: 'user'`.
 | `@noirstack/web-foundation/seo` | Sitemap, metadata, structured data |
 | `@noirstack/web-foundation/quality` | Content scoring and publication gates |
 | `@noirstack/web-foundation/performance` | Browser RUM, Core Web Vitals, GA4/GTM, beacon reporters |
+| `@noirstack/web-foundation/media` | Sharp-compatible responsive image and social-card optimization |
+| `@noirstack/web-foundation/content` | AI-content review, citation, transcript, and Markdown quality gates |
 | `@noirstack/web-foundation/audit` | Lighthouse, crawl, accessibility, semantic HTML, and rendered-page audit presets |
 
 ## Complete SEO metadata
@@ -399,6 +401,27 @@ const crawler = createLinkinatorPreset({
 ```
 
 The complete external audit suite currently requires Node 22 because the latest HTML Validate and Puppeteer releases require it. The normal `web-foundation` runtime remains compatible with Node 20. Audit tooling should run in a dedicated CI job against a built preview or deployment.
+
+## SEO media and AI-content pipeline
+
+The opt-in `media` export accepts a Sharp-compatible pipeline and generates AVIF, WebP, and JPEG responsive variants, explicit dimensions, `srcset` descriptors, and 1200×630 social cards. Sharp remains an optional peer dependency so services that do not process media avoid its native installation.
+
+```ts
+import sharp from 'sharp';
+import {
+  buildResponsiveImageSources,
+  optimizeSeoImage,
+} from '@noirstack/web-foundation/media';
+
+const variants = await optimizeSeoImage(sharp(inputBuffer), {
+  originalWidth: 2400,
+  originalHeight: 1350,
+  includeSocialCard: true,
+});
+const sources = buildResponsiveImageSources('/media/investigation', variants);
+```
+
+The `content` export provides a Remark-compatible lint preset and a publication gate for AI-generated public material. It checks canonical hygiene, one H1, heading progression, duplicate headings, descriptive links and image alternatives, minimum substance, citations, named human review, safe URLs, and required media transcripts.
 
 ## Development
 
