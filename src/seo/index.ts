@@ -5,3 +5,4 @@ export * from './breadcrumbs.js';
 export * from './link-analysis.js';
 export * from './route-manifest.js';
 export * from './browser-metadata.js';
+export * from './schema-dts.js';
