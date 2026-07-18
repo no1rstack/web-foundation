@@ -1,4 +1,7 @@
 import type { StructuredDataPayload } from '../types.js';
+import type { Graph, Thing, WithContext } from 'schema-dts';
+
+type JsonLdPayload = StructuredDataPayload | WithContext<Thing> | WithContext<Graph>;
 
 export interface OrgSchemaInput {
   name: string;
@@ -341,7 +344,7 @@ export function buildDocumentationSchema(input: DocumentationSchemaInput): Struc
   return ld;
 }
 
-export function renderJsonLd(data: StructuredDataPayload | StructuredDataPayload[]): string {
+export function renderJsonLd(data: JsonLdPayload | JsonLdPayload[]): string {
   const payloads = Array.isArray(data) ? data : [data];
   return payloads
     .map((p) => `<script type="application/ld+json">${JSON.stringify(p).replace(/</g, '\\u003c')}</script>`)
@@ -500,6 +503,11 @@ export function validateRichResultData(data: StructuredDataPayload): { valid: bo
     BreadcrumbList: ['itemListElement'],
     SoftwareApplication: ['name', 'description', 'url'],
     CreativeWork: ['name', 'url'],
+    ImageObject: ['name', 'contentUrl'],
+    VideoObject: ['name', 'description', 'thumbnailUrl', 'uploadDate'],
+    AudioObject: ['name', 'description', 'contentUrl'],
+    Dataset: ['name', 'description', 'url', 'creator'],
+    DataCatalog: ['name', 'description', 'url', 'publisher'],
   };
   for (const property of requiredByType[String(data['@type'])] || []) {
     if (data[property] === undefined || data[property] === null || data[property] === '') {
