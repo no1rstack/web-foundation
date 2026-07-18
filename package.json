@@ -38,6 +38,14 @@
     "./audit": {
       "types": "./dist/audit/index.d.ts",
       "import": "./dist/audit/index.js"
+    },
+    "./media": {
+      "types": "./dist/media/index.d.ts",
+      "import": "./dist/media/index.js"
+    },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "import": "./dist/content/index.js"
     }
   },
   "files": [
@@ -71,7 +79,10 @@
     "ai-media",
     "lighthouse",
     "accessibility",
-    "seo-audit"
+    "seo-audit",
+    "image-seo",
+    "media-optimization",
+    "content-quality"
   ],
   "license": "MIT",
   "repository": {
@@ -88,7 +99,10 @@
     "axe-core": "^4.12.1",
     "html-validate": "^11.5.6",
     "linkinator": "^7.6.1",
-    "puppeteer": "^25.3.0"
+    "puppeteer": "^25.3.0",
+    "remark": "^15.0.1",
+    "remark-lint": "^10.0.1",
+    "sharp": "^0.35.3"
   },
   "peerDependenciesMeta": {
     "express": {
@@ -107,6 +121,15 @@
       "optional": true
     },
     "puppeteer": {
+      "optional": true
+    },
+    "remark": {
+      "optional": true
+    },
+    "remark-lint": {
+      "optional": true
+    },
+    "sharp": {
       "optional": true
     }
   },
