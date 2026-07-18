@@ -78,7 +78,7 @@ class FakeDocument implements BrowserDocumentLike {
       attribute === 'rel' ? node.rel === value : node.attributes.get(attribute) === value
     ) ?? null;
   }
-  createElement() { return new FakeElement(); }
+  createElement(_tagName: string) { return new FakeElement(); }
 }
 
 describe('browser metadata synchronization', () => {
