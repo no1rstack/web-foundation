@@ -81,6 +81,7 @@ Apply authentication before rate limiting when a rule uses `keyType: 'user'`.
 | `@noirstack/web-foundation/middleware` | Framework-neutral HTTP functions |
 | `@noirstack/web-foundation/seo` | Sitemap, metadata, structured data |
 | `@noirstack/web-foundation/quality` | Content scoring and publication gates |
+| `@noirstack/web-foundation/performance` | Browser RUM, Core Web Vitals, GA4/GTM, beacon reporters |
 
 ## Complete SEO metadata
 
@@ -270,6 +271,56 @@ app.use(wf.errorHandler());
 ```
 
 These helpers return explicit `301`, `404`, `410`, and `500` responses. HTML error responses can receive page metadata and are marked `noindex,nofollow` for server errors.
+
+## Real-user performance and Core Web Vitals
+
+The browser-only `performance` export wraps `web-vitals` 5.x and records CLS, INP, and LCP by default, with optional FCP and TTFB collection. It supports the standard and attribution builds, deterministic sampling, multiple reporters, `dataLayer`/GA4 mappings, beacon delivery, batching, and product/release/route context.
+
+```ts
+import {
+  createBeaconReporter,
+  createGa4DataLayerReporter,
+  startWebVitals,
+} from '@noirstack/web-foundation/performance';
+
+await startWebVitals({
+  product: 'judicium',
+  environment: 'production',
+  release: import.meta.env.VITE_RELEASE,
+  route: () => location.pathname,
+  collectAll: true,
+  attribution: true,
+  sampleRate: 0.1,
+  visibilityState: () => document.visibilityState,
+  reporter: [
+    createGa4DataLayerReporter({ dataLayer: window.dataLayer }),
+    createBeaconReporter({
+      endpoint: '/api/rum/web-vitals',
+      transport: {
+        sendBeacon: navigator.sendBeacon.bind(navigator),
+        fetch: window.fetch.bind(window),
+      },
+    }),
+  ],
+});
+```
+
+Each normalized event includes the metric name, ID, raw value, delta, rounded value, rating, navigation type, timestamp, and optional attribution target/load state. CLS rounding multiplies by 1,000. The GA4 reporter intentionally maps `value` to the metric delta so repeated CLS reports are not summed as repeated totals. The generic `dataLayer` reporter can namespace measurements by metric when consumers want to retain the latest value for every vital.
+
+### Measurement and CrUX limitations
+
+These measurements are real-user monitoring (RUM), not a replacement for CrUX:
+
+- Browser performance APIs expose the current document only. They cannot observe iframe content, including same-origin frames. Events therefore declare `measurementScope: 'document'` and `includesIframeContent: false`.
+- SPA soft navigations are not treated as full browser navigations by the underlying Core Web Vitals APIs. Events declare `softNavigation: false`; use the recorded route as segmentation context, not as a claim of per-soft-navigation vitals.
+- CrUX contains opted-in Chrome traffic, while RUM populations vary by browser, consent, blockers, and sampling.
+- Compare equivalent Chrome/device segments at the 75th percentile over a 28-day window when reconciling RUM with CrUX.
+- CLS and INP can evolve throughout the page lifetime, and not every visit produces every metric. Beacon/keepalive delivery helps preserve late reports.
+- Cross-origin LCP resources, background tabs, bfcache restores, and browser implementation differences can also create discrepancies.
+
+Attribution selectors may contain application identifiers. The default sanitizer trims and caps targets at 256 characters; products handling sensitive identifiers should provide `sanitizeDebugTarget` or disable attribution. Measurement can start before analytics consent, but reporters that transmit or persist data must be gated with `enabled` according to the product's consent policy.
+
+Implementation guidance was aligned with the official `web-vitals` limitations, the CrUX/RUM comparison guidance, and Simo Ahava's Core Web Vitals dataLayer and GA4 patterns.
 
 ## Development
 
