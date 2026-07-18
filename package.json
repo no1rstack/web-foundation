@@ -1,6 +1,6 @@
 {
   "name": "@noirstack/web-foundation",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared web foundation platform — SEO, security, analytics, observability, middleware for all no1rstack apps",
   "type": "module",
   "main": "./dist/index.js",
