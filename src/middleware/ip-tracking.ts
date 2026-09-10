@@ -9,10 +9,11 @@ export interface ClientIpOptions {
 export function extractClientIp(
   headers: Record<string, string | string[] | undefined>,
   remoteAddress?: string,
-  options: ClientIpOptions | boolean = true
+  options: ClientIpOptions | boolean = false
 ): string | null {
-  // Boolean support is retained for backward compatibility. New callers should
-  // use the options object so proxy trust is visible at the call site.
+  // Boolean support is retained for backward compatibility. Forwarded headers
+  // are intentionally untrusted by default; callers behind a trusted proxy
+  // must opt in explicitly after configuring proxy trust at the framework layer.
   const trustProxyHeaders = typeof options === 'boolean' ? options : options.trustProxyHeaders;
   const forwarded = headers['x-forwarded-for'];
 
