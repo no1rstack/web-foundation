@@ -431,7 +431,9 @@ npm run check
 npm pack --dry-run
 ```
 
-CI verifies Node 20 and Node 22. See [SECURITY.md](SECURITY.md) for vulnerability reporting and deployment responsibilities.
+GitLab CI is the primary build authority: it runs lint, unit tests, the TypeScript build, and a package dry-run, then mirrors source to GitHub. GitHub runs only the npm Trusted Publisher workflow (`.github/workflows/publish.yml`), which publishes via OIDC without an `NPM_TOKEN`.
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and deployment responsibilities, [MIGRATION.md](MIGRATION.md) to move from the 0.1.x line to 0.3.x, and [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 

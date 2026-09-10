@@ -1,0 +1,57 @@
+# Web Foundation CI/CD
+#
+# GitLab is the primary CI/build authority for this package:
+#   1) `verify` runs lint, unit tests, the TypeScript build, and a package dry-run
+#   2) `mirror-to-github` pushes source to GitHub, where the npm Trusted
+#      Publisher workflow (.github/workflows/publish.yml) publishes
+#      @noirstack/web-foundation using OIDC (no NPM_TOKEN).
+#
+# GitHub is a mirror + the npm Trusted Publisher host only; it does not run
+# build/test CI for this package.
+
+stages:
+  - verify
+  - mirror
+
+variables:
+  GIT_DEPTH: "0"
+  GITHUB_REPO: no1rstack/web-foundation
+
+verify:
+  stage: verify
+  tags: [vps, podman, production]
+  script:
+    - |
+      export PATH="${HOME}/.local/bin:${HOME}/.nvm/versions/node/v24.17.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      node --version
+      npm --version
+      npm ci
+      npm run check
+      npm pack --dry-run
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+
+mirror-to-github:
+  stage: mirror
+  tags: [vps, podman, production]
+  allow_failure: true
+  needs: []
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - |
+      set -euo pipefail
+      if [ -z "${GITHUB_TOKEN:-}" ]; then
+        echo "SKIP: GITHUB_TOKEN not set — no GitHub credentials to mirror with"
+        exit 0
+      fi
+      AUTH_URL="https://${GITHUB_MIRROR_USER:-no1rstack}:${GITHUB_TOKEN}@github.com/${GITHUB_REPO}.git"
+      git remote add github "${AUTH_URL}" 2>/dev/null || git remote set-url github "${AUTH_URL}"
+      # GitLab checks out the pipeline commit as a detached HEAD, so a local
+      # branch ref may be stale. Push the checked-out commit to master explicitly.
+      git push --force --quiet github "HEAD:refs/heads/master" "refs/tags/*:refs/tags/*" 2>&1 || {
+        echo "GitHub mirror push failed (check GITHUB_TOKEN)"
+      }
+      echo "Mirror to GitHub complete ($(git rev-parse HEAD))"

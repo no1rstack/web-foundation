@@ -1,6 +1,6 @@
 {
   "name": "@noirstack/web-foundation",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Shared web foundation platform — SEO, security, analytics, observability, middleware for all no1rstack apps",
   "type": "module",
   "main": "./dist/index.js",
@@ -150,8 +150,7 @@
     "typescript": "~5.8.2"
   },
   "publishConfig": {
-    "access": "public",
-    "provenance": false
+    "access": "public"
   },
   "sideEffects": false,
   "engines": {
