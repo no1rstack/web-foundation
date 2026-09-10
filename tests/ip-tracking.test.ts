@@ -5,8 +5,20 @@ import { extractClientIp, hashIp, detectBot } from '../src/middleware/ip-trackin
 
 describe('ip-tracking', () => {
   describe('extractClientIp', () => {
-    it('extracts from x-forwarded-for', () => {
-      const ip = extractClientIp({ 'x-forwarded-for': '192.168.1.1, 10.0.0.1' });
+    it('ignores x-forwarded-for by default', () => {
+      const ip = extractClientIp(
+        { 'x-forwarded-for': '192.168.1.1, 10.0.0.1' },
+        '172.16.0.10'
+      );
+      assert.strictEqual(ip, '172.16.0.10');
+    });
+
+    it('extracts from x-forwarded-for when proxy headers are explicitly trusted', () => {
+      const ip = extractClientIp(
+        { 'x-forwarded-for': '192.168.1.1, 10.0.0.1' },
+        '172.16.0.10',
+        { trustProxyHeaders: true }
+      );
       assert.strictEqual(ip, '192.168.1.1');
     });
 
@@ -15,13 +27,17 @@ describe('ip-tracking', () => {
       assert.strictEqual(ip, '10.0.0.1');
     });
 
-    it('strips ipv6 prefix', () => {
-      const ip = extractClientIp({ 'x-forwarded-for': '::ffff:192.168.1.1' });
+    it('strips ipv6 prefix from a trusted forwarded address', () => {
+      const ip = extractClientIp(
+        { 'x-forwarded-for': '::ffff:192.168.1.1' },
+        '172.16.0.10',
+        true
+      );
       assert.strictEqual(ip, '192.168.1.1');
     });
 
-    it('returns null for no IP', () => {
-      const ip = extractClientIp({});
+    it('returns null when no trusted client address is available', () => {
+      const ip = extractClientIp({ 'x-forwarded-for': '192.168.1.1' });
       assert.strictEqual(ip, null);
     });
   });
